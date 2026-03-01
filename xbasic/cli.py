@@ -19,31 +19,33 @@ def check_dependency(name, install_hint):
 
 def find_compiler():
     """Find the pre-compiled compiler binary, or build it if source is available."""
-    # 1. Check for pre-built binary shipped with the package
-    pkg_compiler = get_resource_path("compiler")
+    # 1. Check for pre-built binary shipped with the package (xbasic/compiler/compiler)
+    pkg_compiler = get_resource_path(os.path.join("compiler", "compiler"))
     if os.path.isfile(pkg_compiler) and os.access(pkg_compiler, os.X_OK):
         return pkg_compiler
 
-    # 2. Check for binary in the current working directory (dev mode)
+    # 2. Check for binary in the current working directory (dev mode: ./compiler)
     cwd_compiler = os.path.join(os.getcwd(), "compiler")
     if os.path.isfile(cwd_compiler) and os.access(cwd_compiler, os.X_OK):
         return cwd_compiler
 
     # 3. Try to build from source
-    makefile = os.path.join(os.path.dirname(get_resource_path(".")), "Makefile")
+    pkg_root = os.path.dirname(os.path.dirname(get_resource_path(".")))
+    makefile = os.path.join(pkg_root, "Makefile")
     if os.path.exists(makefile):
         check_dependency("g++", "brew install gcc (macOS) | apt install g++ (Ubuntu)")
         check_dependency("make", "brew install make (macOS) | apt install make (Ubuntu)")
         try:
-            subprocess.check_call(["make", "-C", os.path.dirname(makefile)],
+            subprocess.check_call(["make", "-C", pkg_root],
                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            if os.path.isfile(cwd_compiler):
-                return cwd_compiler
+            built = os.path.join(pkg_root, "compiler")
+            if os.path.isfile(built):
+                return built
         except subprocess.CalledProcessError:
             pass
 
     print("\033[91mError:\033[0m Could not find the XBasic compiler binary.")
-    print("Try rebuilding with: make")
+    print("Try reinstalling: pip install --force-reinstall .")
     sys.exit(1)
 
 def main():
