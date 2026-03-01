@@ -11,7 +11,7 @@ class CustomInstall(install):
         install.run(self)
 
 setup(
-    name="xbasic",
+    name="xbasic-8bit",
     version="2.0.0",
     packages=find_packages(),
     include_package_data=True,
