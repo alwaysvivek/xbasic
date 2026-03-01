@@ -29,7 +29,36 @@ Your XBasic code becomes assembly → machine code → runs on a cycle-accurate 
 
 ## 🚀 Quick Start
 
-### Install
+### Option 1: Docker (Zero Setup — Recommended)
+
+No dependencies needed. Just Docker.
+
+```bash
+# Build once
+docker build -t xbasic .
+
+# Run any .sl file
+docker run --rm -v $(pwd):/code xbasic /code/examples/hello.sl
+```
+
+That's it. One command to run any XBasic program.
+
+### Option 2: pip install
+
+```bash
+pip install xbasic-8bit
+```
+
+> [!NOTE]
+> **System dependencies required** (pip cannot install these):
+>
+> | Dependency | macOS | Ubuntu/Debian |
+> |-----------|-------|---------------|
+> | Verilog simulator | `brew install icarus-verilog` | `apt install iverilog` |
+>
+> The C++ compiler binary is **pre-built and included** in the pip package — no `g++` or `make` needed for installation.
+
+### Option 3: Build from Source
 
 ```bash
 git clone https://github.com/alwaysvivek/xbasic.git
@@ -37,19 +66,20 @@ cd xbasic
 pip install .
 ```
 
+Requires: `g++`, `make`, `iverilog`, Python 3.x
+
 ### Run
 
 ```bash
-xbasic examples/hello.sl
+xbasic examples/hello.sl         # normal mode
+xbasic examples/hello.sl --debug # full CPU trace
 ```
 
-Debug mode (shows full CPU trace):
-```bash
-xbasic examples/hello.sl --debug
+If any dependency is missing, XBasic will tell you exactly what to install:
 ```
-
-> [!NOTE]
-> Dependencies: `g++`, `make`, `iverilog`, `vvp`, Python 3.x
+Error: 'iverilog' is not installed.
+Install it with: brew install icarus-verilog (macOS) | apt install iverilog (Ubuntu)
+```
 
 ## 📦 What's Included
 
@@ -65,6 +95,7 @@ xbasic examples/hello.sl --debug
 │   ├── architecture.md # System architecture overview
 │   └── ISA.md          # Instruction set reference
 ├── examples/           # Ready-to-run example programs
+├── Dockerfile          # Zero-setup Docker image
 ├── SYNTAX.md           # Complete language syntax guide
 ├── setup.py            # pip packaging
 └── Makefile            # C++ build system
@@ -146,16 +177,13 @@ XBasic v2 delivers **massive performance gains** over the original Python interp
 | **Binary Size** | 82 KB Python + CPython runtime | 213 KB self-contained native | **Standalone** |
 | **Determinism** | GC pauses, JIT variance | Cycle-accurate execution | **100% deterministic** |
 
-> [!IMPORTANT]
-> These gains come from eliminating the Python interpreter entirely. Your code is compiled to native 8-bit instructions that execute directly on a hardware-accurate CPU simulation — no garbage collector, no VM overhead, no runtime interpretation.
-
 ### Why It's Faster
 
-- **No interpreter overhead**: The C++ compiler translates XBasic → assembly at compile time, not statement-by-statement at runtime
-- **Register-based execution**: 7 hardware registers (A–G) eliminate memory lookups for temporaries
-- **Hardware branching**: Comparisons use CPU flags (`zero`, `carry`) with conditional jumps — not Python `if` chains
-- **Static memory model**: Variables live at fixed addresses (`0x80+`), no heap allocation or garbage collection
-- **Cycle-accurate**: Every instruction takes exactly 1 clock cycle in the Verilog simulation
+- **No interpreter overhead**: C++ compiler translates XBasic → assembly at compile time
+- **Register-based execution**: 7 hardware registers (A–G) eliminate memory lookups
+- **Hardware branching**: CPU flags (`zero`, `carry`) with conditional jumps
+- **Static memory model**: Variables at fixed addresses (`0x80+`), no garbage collection
+- **Cycle-accurate**: Every instruction takes exactly 1 clock cycle
 
 ## 📋 Register Map
 
