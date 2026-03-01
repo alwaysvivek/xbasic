@@ -1,94 +1,74 @@
-# 🧠 SIMPLELANG → 8-BIT CPU COMPILER
+# 🧠 XBASIC-MODERN → 8-BIT CPU COMPILER
 
-A comprehensive project for building a compiler targeting a custom 8-bit CPU.
-
+A powerful hybrid language merging XBasic syntax with a high-performance C++ compiler and Verilog-based 8-bit CPU.
 
 ## 🚀 Clean Pipeline to Run All
 
 To run the entire end-to-end process (Build, Compile, Simulate), simply execute:
 ```bash
-./run.sh
+./run.sh [input_file]
 ```
-This script automates the full toolchain.
+Example: `./run.sh tests/loop.sl`
 
 ## 📂 Directory Structure
 ```text
 .
 ├── src/               # Compiler Source Code (C++)
-├── tests/             # Sample SimpleLang Programs
-├── 8bit-computer/     # Target CPU Simulator (Verilog)
+├── tests/             # XBasic-Modern Test Programs
+├── 8bit-computer/     # Custom 8-bit CPU (Verilog)
 ├── Makefile           # Build System
 ├── run.sh             # Automation Script
-├── README.md          # Project Guidelines
-└── error_log.md       # Debugging History
+└── README.md          # Project Specifications
 ```
 
-## 📌 Architectural Decisions
+## 📜 Language Specification (XBasic-Modern)
 
-### Data Model
-* **8-bit unsigned integers**: Range 0–255.
-* **Overflow Policy**: Arithmetic wraps (0xFF + 1 = 0x00).
+### Data Types
+* **num**: 8-bit unsigned integer (0-255).
+* **text**: String literal support (Experimental).
 
-### Memory Model
-* **Static Allocation**: Program code starts at `0x00`, variables start at `0x80`.
-* **No Stack**: Uses a **register-machine** approach with registers `C-G` for expression temporaries.
+### Control Flow
+* **IF...THEN...ELSE...END**: Standard conditional logic.
+* **FOR...TO...NEXT**: Iterative loops with automatic increment.
+* **WHILE...END**: Condition-based loops.
+* **PRINT**: Hardware-mapped output.
 
-## 📜 Formal Grammar (BNF)
-
+### Formal Grammar (BNF)
 ```text
-program        → declaration* statement*
-declaration    → "int" IDENTIFIER ";"
-statement      → assignment | if_statement
-assignment     → IDENTIFIER "=" expression ";"
-if_statement   → "if" "(" condition ")" "{" statement* "}"
-condition      → expression "==" expression
+program        → statement*
+statement      → declaration | assignment | if_st | for_st | while_st | print_st
+declaration    → ("num" | "text") IDENTIFIER ["=" expression]
+assignment     → IDENTIFIER "=" expression
+if_st          → "IF" condition "THEN" statement* ["ELSE" statement*] "END"
+for_st         → "FOR" IDENTIFIER "=" expression "TO" expression statement* "NEXT"
+while_st       → "WHILE" condition statement* "END"
+print_st       → "PRINT" expression
+condition      → expression ("==" | "!=" | ">" | "<") expression
 expression     → term (("+"|"-") term)*
-term           → factor
-factor         → NUMBER | IDENTIFIER | "(" expression ")"
+term           → factor (("*"|"/") factor)*
+factor         → NUMBER | IDENTIFIER | STRING | "(" expression ")"
 ```
-
-## ⚠️ Error Policies
-
-### Lexical Errors
-* **Unknown Character**: Print line number and character, then `exit(1)`.
-* **Invalid Number**: Numbers > 255 will be truncated/wrapped (8-bit model).
-
-### Syntax Errors
-* **Unexpected Token**: Print "Expected [token] but found [token]" at line [N], then `exit(1)`.
 
 ## 📋 Register Mapping
 
 | Register | Purpose |
 |----------|---------|
-| `r0 (A)` | Primary Accumulator / Left Operand |
-| `r1 (B)` | Right Operand |
-| `r2-r6`  | Intermediate results (Register Stack) |
+| `r0 (A)` | Primary Accumulator / ALU Result |
+| `r1 (B)` | Secondary Operand |
+| `r2-r6`  | General Purpose / Scratch |
+| `r7 (T)` | Memory Address Buffer |
 
 ## 📦 Memory Model
 * **Program**: Starts at `0x00`.
-* **Variables**: Dynamically allocated from `0x80` onwards.
+* **Variables**: Statically allocated starting at `0x80`.
 
-## 📝 Example Translation
-
-**SimpleLang:**
-```c
-int a;
-a = 10;
-if (a == 10) { a = 0; }
+## 📝 Example Code
+```xbasic
+num i = 0
+num sum = 0
+FOR i = 1 TO 5
+  sum = sum + i
+NEXT
+PRINT sum
 ```
-
-**Generated Assembly:**
-```asm
-.text
-ldi A 10
-sta 128
-lda 128
-mov B A
-ldi A 10
-cmp
-jne %label_end_1
-ldi A 0
-sta 128
-label_end_1:
-hlt
-```
+**Output:** `15 ($0f)`

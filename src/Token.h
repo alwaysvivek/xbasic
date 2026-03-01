@@ -17,19 +17,33 @@
  * No unknown token, as that results in a fatal error.
  */
 enum TokenType {
-  TOKEN_INT,
-  TOKEN_IF,
+  TOKEN_INT, // Deprecated in favor of TOKEN_NUM
+  TOKEN_NUM, // XBasic 'num'
+  TOKEN_IF,  // XBasic 'IF'
+  TOKEN_THEN,
+  TOKEN_ELSE,
+  TOKEN_FOR,
+  TOKEN_TO,
+  TOKEN_NEXT,
+  TOKEN_WHILE,
+  TOKEN_END,
+  TOKEN_BANG_EQUAL, // !=
+  TOKEN_PRINT,
+  TOKEN_TEXT, // XBasic 'text'
+  TOKEN_STRING,
   TOKEN_IDENTIFIER,
   TOKEN_NUMBER,
-  TOKEN_ASSIGN,      // =
-  TOKEN_PLUS,        // +
-  TOKEN_MINUS,       // -
-  TOKEN_EQUAL_EQUAL, // ==
-  TOKEN_LPAREN,      // (
-  TOKEN_RPAREN,      // )
-  TOKEN_LBRACE,      // {
-  TOKEN_RBRACE,      // }
-  TOKEN_SEMICOLON,   // ;
+  TOKEN_ASSIGN,
+  TOKEN_PLUS,
+  TOKEN_MINUS,
+  TOKEN_MULTIPLY,
+  TOKEN_DIVIDE,
+  TOKEN_EQUAL_EQUAL,
+  TOKEN_LPAREN,
+  TOKEN_RPAREN,
+  TOKEN_LBRACE, // Maybe keep for compatibility?
+  TOKEN_RBRACE,
+  TOKEN_SEMICOLON,
   TOKEN_EOF
 };
 

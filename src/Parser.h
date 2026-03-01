@@ -31,6 +31,9 @@ private:
   std::unique_ptr<AstNode> parseStatement();
   std::unique_ptr<AstNode> parseAssignment();
   std::unique_ptr<AstNode> parseIf();
+  std::unique_ptr<AstNode> parseWhile();
+  std::unique_ptr<AstNode> parseFor();
+  std::unique_ptr<AstNode> parsePrint();
   std::unique_ptr<AstNode> parseExpression();
   std::unique_ptr<AstNode> parseTerm();
   std::unique_ptr<AstNode> parseFactor();

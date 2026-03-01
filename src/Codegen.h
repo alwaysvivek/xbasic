@@ -37,37 +37,110 @@ public:
     }
     case AST_DECLARATION: {
       auto decl = static_cast<DeclarationNode *>(node);
-      symbolTable.declare(decl->name);
+      int addr = symbolTable.declare(decl->name);
+      if (decl->initialValue) {
+        generateExpression(decl->initialValue.get());
+        std::cout << "sta " << addr << " ; init " << decl->name << std::endl;
+      }
       break;
     }
     case AST_ASSIGNMENT: {
       auto assign = static_cast<AssignmentNode *>(node);
       generateExpression(assign->expression.get());
       int addr = symbolTable.getAddress(assign->identifier);
-      std::cout << "sta " << addr << " ; store result from A to "
-                << assign->identifier << std::endl;
+      std::cout << "sta " << addr << " ; store result to " << assign->identifier
+                << std::endl;
       break;
     }
     case AST_IF: {
       auto ifNode = static_cast<IfNode *>(node);
       int labelId = ++labelCounter;
+      generateExpression(ifNode->condition.get());
 
-      // Evaluate right operand and put in B
-      generateExpression(ifNode->right.get());
-      std::cout << "mov B A" << std::endl;
-
-      // Evaluate left operand and it stays in A
-      generateExpression(ifNode->left.get());
-
-      // Compare
-      std::cout << "cmp" << std::endl;
-      std::cout << "jne %label_end_" << labelId << std::endl;
-
-      for (auto &stmt : ifNode->body) {
-        generate(stmt.get());
+      if (ifNode->condition->type == AST_BINARY_OP) {
+        auto bin = static_cast<BinaryOpNode *>(ifNode->condition.get());
+        if (bin->op == "==")
+          std::cout << "jne label_else_" << labelId << std::endl;
+        else if (bin->op == "!=")
+          std::cout << "je label_else_" << labelId << std::endl;
+        else
+          std::cout << "jz label_else_" << labelId << std::endl;
+      } else {
+        std::cout << "jz label_else_" << labelId << std::endl;
       }
 
-      std::cout << "label_end_" << labelId << ":" << std::endl;
+      for (auto &stmt : ifNode->thenBody)
+        generate(stmt.get());
+
+      if (!ifNode->elseBody.empty()) {
+        std::cout << "jmp %label_end_" << labelId << std::endl;
+        std::cout << "label_else_" << labelId << ":" << std::endl;
+        for (auto &stmt : ifNode->elseBody)
+          generate(stmt.get());
+        std::cout << "label_end_" << labelId << ":" << std::endl;
+      } else {
+        std::cout << "label_else_" << labelId << ":" << std::endl;
+      }
+      break;
+    }
+    case AST_WHILE: {
+      auto whileNode = static_cast<WhileNode *>(node);
+      int labelId = ++labelCounter;
+      std::cout << "label_while_start_" << labelId << ":" << std::endl;
+      generateExpression(whileNode->condition.get());
+      // For now, only support == and != which set/unset Zero flag
+      // If op was '==' and result of cmp is not equal, exit
+      if (whileNode->condition->type == AST_BINARY_OP) {
+        auto bin = static_cast<BinaryOpNode *>(whileNode->condition.get());
+        if (bin->op == "==")
+          std::cout << "jne label_while_end_" << labelId << std::endl;
+        else if (bin->op == "!=")
+          std::cout << "je label_while_end_" << labelId << std::endl;
+        else
+          std::cout << "jz label_while_end_" << labelId << " ; default exit"
+                    << std::endl;
+      } else {
+        std::cout << "jz label_while_end_" << labelId << std::endl;
+      }
+
+      for (auto &stmt : whileNode->body)
+        generate(stmt.get());
+      std::cout << "jmp label_while_start_" << labelId << std::endl;
+      std::cout << "label_while_end_" << labelId << ":" << std::endl;
+      break;
+    }
+    case AST_FOR: {
+      auto forNode = static_cast<ForNode *>(node);
+      int labelId = ++labelCounter;
+      int addr = symbolTable.isDeclared(forNode->varName)
+                     ? symbolTable.getAddress(forNode->varName)
+                     : symbolTable.declare(forNode->varName);
+
+      // Init: var = startExpr
+      generateExpression(forNode->startExpr.get());
+      std::cout << "sta " << addr << std::endl;
+
+      std::cout << "label_for_start_" << labelId << ":" << std::endl;
+      for (auto &stmt : forNode->body)
+        generate(stmt.get());
+
+      // Increment: var = var + 1
+      std::cout << "lda " << addr << std::endl;
+      std::cout << "inc" << std::endl;
+      std::cout << "sta " << addr << std::endl;
+
+      // Condition: if end >= var loop back
+      std::cout << "mov B A" << std::endl;        // B = var
+      generateExpression(forNode->endExpr.get()); // A = end
+      std::cout << "cmp ; end - var" << std::endl;
+      std::cout << "jnc label_for_start_" << labelId << " ; loop if end >= var"
+                << std::endl;
+      break;
+    }
+    case AST_PRINT: {
+      auto printNode = static_cast<PrintNode *>(node);
+      generateExpression(printNode->expression.get());
+      std::cout << "out 0 ; print A to primary I/O" << std::endl;
       break;
     }
     default:
@@ -133,10 +206,13 @@ private:
 
       nextReg--;
 
-      if (bin->op == '+') {
+      if (bin->op == "+") {
         std::cout << "add" << std::endl;
-      } else if (bin->op == '-') {
+      } else if (bin->op == "-") {
         std::cout << "sub" << std::endl;
+      } else if (bin->op == "==") {
+        std::cout << "cmp" << std::endl;
+        // The IF/WHILE will handle the branch
       }
     }
   }

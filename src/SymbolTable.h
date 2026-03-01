@@ -18,18 +18,23 @@ public:
    */
   SymbolTable() : nextAddress(0x80) {}
 
-  bool declare(const std::string &name) {
+  int declare(const std::string &name) {
     if (table.find(name) != table.end()) {
       std::cerr << "Semantic Error: Redeclaration of variable '" << name << "'"
                 << std::endl;
-      return false;
+      exit(1);
     }
     if (nextAddress > 0xFF) {
       std::cerr << "Semantic Error: Memory Exhausted" << std::endl;
-      return false;
+      exit(1);
     }
-    table[name] = nextAddress++;
-    return true;
+    int addr = nextAddress++;
+    table[name] = addr;
+    return addr;
+  }
+
+  bool isDeclared(const std::string &name) {
+    return table.find(name) != table.end();
   }
 
   int getAddress(const std::string &name) {

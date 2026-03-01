@@ -33,10 +33,38 @@ Token Lexer::getNextToken() {
     while (std::isalnum(peek())) {
       result += advance();
     }
-    if (result == "int")
-      return {TOKEN_INT, result, line};
-    if (result == "if")
+    // Case-insensitive check for XBasic keywords
+    std::string upper = result;
+    for (auto &ch : upper)
+      ch = std::toupper(ch);
+
+    if (result == "num")
+      return {TOKEN_NUM, result, line};
+    if (result == "text")
+      return {TOKEN_TEXT, result, line};
+    if (upper == "IF")
       return {TOKEN_IF, result, line};
+    if (upper == "THEN")
+      return {TOKEN_THEN, result, line};
+    if (upper == "ELSE")
+      return {TOKEN_ELSE, result, line};
+    if (upper == "FOR")
+      return {TOKEN_FOR, result, line};
+    if (upper == "TO")
+      return {TOKEN_TO, result, line};
+    if (upper == "NEXT")
+      return {TOKEN_NEXT, result, line};
+    if (upper == "WHILE")
+      return {TOKEN_WHILE, result, line};
+    if (upper == "END")
+      return {TOKEN_END, result, line};
+    if (upper == "PRINT")
+      return {TOKEN_PRINT, result, line};
+
+    // Compatibility
+    if (result == "int")
+      return {TOKEN_NUM, result, line};
+
     return {TOKEN_IDENTIFIER, result, line};
   }
 
@@ -46,6 +74,28 @@ Token Lexer::getNextToken() {
       result += advance();
     }
     return {TOKEN_NUMBER, result, line};
+  }
+
+  if (c == '"') {
+    advance(); // skip opening quote
+    std::string result;
+    while (peek() != '"' && peek() != '\0') {
+      result += advance();
+    }
+    if (peek() == '"')
+      advance(); // skip closing quote
+    return {TOKEN_STRING, result, line};
+  }
+
+  if (c == '!') {
+    advance();
+    if (peek() == '=') {
+      advance();
+      return {TOKEN_BANG_EQUAL, "!=", line};
+    }
+    std::cerr << "Lexical Error: Unexpected character '!' at line " << line
+              << std::endl;
+    exit(1);
   }
 
   if (c == '=') {
@@ -64,6 +114,14 @@ Token Lexer::getNextToken() {
   if (c == '-') {
     advance();
     return {TOKEN_MINUS, "-", line};
+  }
+  if (c == '*') {
+    advance();
+    return {TOKEN_MULTIPLY, "*", line};
+  }
+  if (c == '/') {
+    advance();
+    return {TOKEN_DIVIDE, "/", line};
   }
   if (c == '(') {
     advance();

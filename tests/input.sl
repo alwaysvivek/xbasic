@@ -1,11 +1,9 @@
-int a;
-int b;
-int max;
+num a = 12
+num b = 9
+num max = a
 
-a = 12;
-b = 9;
-max = a;
+IF b == a THEN
+  max = b
+END
 
-if (b - a == 0) {
-  max = b;
-}
+PRINT max
