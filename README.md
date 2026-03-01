@@ -13,6 +13,16 @@ After installation, you can run any `.sl` program using the unified CLI:
 xb-modern tests/loop.sl
 ```
 
+**Output:**
+```text
+> 15
+```
+
+Need more detail? Use the debug flag:
+```bash
+xb-modern tests/loop.sl --debug
+```
+
 ## 📂 Directory Structure
 ```text
 .

@@ -10,44 +10,58 @@ def get_resource_path(relative_path):
 def main():
     parser = argparse.ArgumentParser(description="XBasic-Modern Toolchain")
     parser.add_argument("input", help="XBasic-Modern source file (.sl)")
+    parser.add_argument("--debug", action="store_true", help="Show full simulation logs and internal states")
     args = parser.parse_args()
 
     if not os.path.exists(args.input):
-        print(f"Error: {args.input} not found.")
+        print(f"\033[91mError:\033[0m {args.input} not found.")
         sys.exit(1)
 
     pkg_root = os.path.dirname(__file__)
-    compiler_bin = os.path.join(os.getcwd(), "compiler") # Built by Makefile in root for now
+    compiler_bin = os.path.join(os.getcwd(), "compiler") 
     sim_dir = get_resource_path("simulator")
     asm_py = os.path.join(sim_dir, "asm", "asm.py")
 
     # 1. Compile
-    print(f"--- Compiling {args.input} ---")
-    subprocess.check_call([compiler_bin, args.input], stdout=open("output.asm", "w"))
+    if args.debug: print(f"--- Compiling {args.input} ---")
+    try:
+        subprocess.check_call([compiler_bin, args.input], stdout=open("output.asm", "w"), stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        print("\033[91mCompilation Failed\033[0m")
+        sys.exit(1)
 
     # 2. Assemble
-    print("--- Assembling ---")
+    if args.debug: print("--- Assembling ---")
     with open("memory.list", "w") as f:
         subprocess.check_call([sys.executable, asm_py, "output.asm"], stdout=f)
 
     # 3. Simulate
-    print("--- Simulating ---")
-    # Need to run iverilog in the sim_dir context or provide full paths
-    # For simplicity, let's copy files to current dir or use -I
-    # Actually, let's just use the existing run.sh logic but in Python
+    if args.debug: print("--- Simulating ---")
     rtl_files = [
         "alu.v", "cpu_control.v", "cpu_registers.v", "cpu.v", "machine.v", "parameters.v",
         "library/clock.v", "library/counter.v", "library/ram.v", "library/register.v", "library/tristate_buffer.v",
         "tb/machine_tb.v"
     ]
-    rtl_paths = [os.path.join(sim_dir, "rtl", f) if not f.startswith("library") and not f.startswith("tb") 
-                 else os.path.join(sim_dir, "rtl", f) for f in rtl_files]
+    rtl_paths = [os.path.join(sim_dir, "rtl", f) for f in rtl_files]
     
-    # We need to handle the relative includes in Verilog as well
-    # Easiest way: cd to simulation dir and run
     cmd = ["iverilog", "-o", "computer", "-Wall", f"-I{sim_dir}"] + rtl_paths
-    subprocess.check_call(cmd)
-    subprocess.check_call(["vvp", "-n", "computer"])
+    
+    if args.debug:
+        subprocess.check_call(cmd)
+        subprocess.check_call(["vvp", "-n", "computer"])
+    else:
+        # User-friendly mode: Filter output
+        subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        result = subprocess.run(["vvp", "-n", "computer"], capture_output=True, text=True)
+        
+        # Parse output for PRINT statements
+        for line in result.stdout.splitlines():
+            if line.startswith("Output:"):
+                # Clean up "Output: 15 ($0f)" -> "15"
+                val = line.split(":")[1].split("(")[0].strip()
+                print(f"\033[92m>\033[0m {val}")
+            elif "halted" in line.lower() and args.debug:
+                print(line)
 
 if __name__ == "__main__":
     main()
