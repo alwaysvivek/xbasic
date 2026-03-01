@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""
+GTKWave Filter Generator
+Modernized version for Python 3.10+
+"""
 
 instructions = {
     "0000 0000": "NOP",
@@ -35,24 +39,23 @@ regs = {
     "110": "G"
 }
 
+# Generate LDI, PUSH, POP instructions for each register
 for k, v in regs.items():
-    instructions["0001 0" + k] = "LDI " + v
-    instructions["0010 0" + k] = "PUSH " + v
-    instructions["0010 1" + k] = "POP " + v
+    instructions[f"0001 0{k}"] = f"LDI {v}"
+    instructions[f"0010 0{k}"] = f"PUSH {v}"
+    instructions[f"0010 1{k}"] = f"POP {v}"
 
+# Generate MOV instructions for each register pair
 for k1, v1 in regs.items():
     for k2, v2 in regs.items():
-        if k1 == k2:
-            txt = "invalid"
-        else:
-            txt = " ".join((v1, v2))
+        txt = "invalid" if k1 == k2 else f"{v1} {v2}"
+        instructions[f"10 {k1} {k2}"] = f"MOV {txt}"
 
-        instructions[" ".join(("10", k1, k2))] = "MOV " + txt
-
-
+# Generate MOV instructions for memory access
 for k, v in regs.items():
-    instructions["10 111 %s" % k] = "MOV M %s" % v
-    instructions["10 %s 111" % k] = "MOV %s M" % v
+    instructions[f"10 111 {k}"] = f"MOV M {v}"
+    instructions[f"10 {k} 111"] = f"MOV {v} M"
 
+# Output for GTKWave filter (removing spaces for binary representation)
 for k, v in instructions.items():
-    print k.replace(" ", ""), v
+    print(f"{k.replace(' ', '')} {v}")

@@ -1,5 +1,6 @@
 COMPUTER    = $(wildcard rtl/*.v)
 LIBRARIES   = $(wildcard rtl/library/*.v)
+ASM         = ./asm/asm.py
 
 build:
 	iverilog -o computer -Wall \
@@ -11,7 +12,8 @@ run: build
 	vvp -n computer
 
 clean:
-	rm -rf computer
+	rm -f computer
+	rm -f machine.vcd
 
 view:
 	gtkwave machine.vcd gtkwave/config.gtkw

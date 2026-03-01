@@ -186,8 +186,52 @@ INTERNAL_CLK:
 
 
 
-## Resources
+---
 
-* [ejrh's CPU in Verilog](https://github.com/ejrh/cpu)
-* [Ben Eater's video series](https://eater.net/8bit/)
-* [Steven Bell's microprocessor](https://stanford.edu/~sebell/oc_projects/ic_design_finalreport.pdf)
+## Day 2 — CPU Deep Dive
+
+### 1. Register File
+The CPU contains 8 general-purpose 8-bit registers:
+- **R0 (A)**: Accumulator. Primary register for ALU operations and I/O.
+- **R1 (B)**: Secondary ALU operand.
+- **R2 (C)**: General purpose.
+- **R3 (D)**: General purpose.
+- **R4 (E)**: General purpose.
+- **R5 (F)**: General purpose.
+- **R6 (G)**: General purpose.
+- **R7 (T/M)**: Temporary / Memory address buffer.
+
+### 2. Instruction Format
+Instructions are **8 bits** wide.
+Format: `[Opcode (5 bits)] [Operand/Register (3 bits)]`
+- **Immediate Values**: Many instructions (like `ldi`, `jmp`) are followed by an additional 8-bit byte for immediate data or addresses.
+
+### 3. Instruction Categories
+- **Data Transfer**: `lda`, `sta`, `ldi`, `mov`
+- **Arithmetic/Logic**: `add`, `sub`, `inc`, `dec`, `and`, `or`, `xor`, `cmp`, `adc`
+- **Branch**: `jmp`, `jz/je`, `jnz/jne`, `jc`, `jnc`, `call`, `ret`
+- **Stack**: `push`, `pop` (Stack instructions are implemented but currently unused by the upcoming compiler).
+
+### 4. Register Usage Policy
+To avoid chaos during code generation:
+- **R0 (A)**: Left operand / Accumulator.
+- **R1 (B)**: Right operand.
+- **R2 (C)**: Computation result / Scratch.
+- **R3-R6**: Additional scratch / Variable storage.
+- **R7 (T)**: Reserved for internal pointer operations.
+
+### 5. 8-bit Data Policy
+- **Integers**: 8-bit unsigned (0–255).
+- **Overflow**: Arithmetic uses standard 8-bit wrap-around (e.g., `255 + 1 = 0`).
+- **Signedness**: No native signed arithmetic support.
+
+### 6. Verification Tests (Day 2)
+Manual tests located in `tests/day2/`:
+- `arithmetic.asm`: Verifies `10 + 20 = 30`.
+- `variables.asm`: Simulates variable mapping and addition.
+- `conditional.asm`: Verifies `if (a == b)` logic.
+
+---
+
+## Resources
+... (existing resources)
